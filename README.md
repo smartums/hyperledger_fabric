@@ -132,3 +132,84 @@ sudo curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.4.2 1.5.2
    ![image](https://user-images.githubusercontent.com/40519952/204635895-d1e1ab50-fde1-430e-ad01-a5a007135d3f.png)
 
 
+### Install the chaincode
+#### Step 1: installing chaincode on Org1
+1. Run the following command to install the chaincode on Org1:
+   ```sh
+    peer lifecycle chaincode install Carshowroom.tar.gz --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```
+   
+   ![image](https://user-images.githubusercontent.com/40519952/204637612-5ea04be9-7773-47aa-a37d-fdcd13243743.png)
+
+    `
+        "NOTE: In case of Permission denied error, use the following command: sudo chmod -R 777 .
+        If the installation is successful, the Chaincode code package identifier is shown in the output."
+    `
+
+#### Step 2: Installing chaincode on Org2
+1. Navigate to `fabric-samples/test-network` folder and create `lifecycle_setup_org2.sh` life using the following command:
+   ```sh
+    nano lifecycle_setup_org2.sh
+   ```
+   `NOTE: Open another Terminal window to install Org2.`
+   
+2. Write the following code in the `lifecycle_setup.sh` file and save it:
+   ```sh
+    #!/bin/sh
+    export PATH=${PWD}/../bin:${PWD}:$PATH
+    export FABRIC_CFG_PATH=$PWD/../config/
+
+    # Environment variables for Org2
+    export CORE_PEER_TLS_ENABLED=true
+    export CORE_PEER_LOCALMSPID="Org2MSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:9051
+    export ORDERER_CA=${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+   ```   
+   ![image](https://user-images.githubusercontent.com/40519952/204638397-5824e7f8-f8a3-4ca3-8c18-f38d99258428.png)
+
+3. To set up all required environment variables, go to the `fabric-samples/test-network` and run the `lifecycle_setup.sh` file using the command:
+   ```sh
+    source ./lifecycle_setup_org2.sh
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204638624-7f1a46e1-098a-4b21-b999-1851973fa1c6.png)
+
+4. The command to install your chaincode:
+    ```sh
+    peer lifecycle chaincode install Carshowroom.tar.gz --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```   
+   ![image](https://user-images.githubusercontent.com/40519952/204638802-e2e4d4d5-0be9-4ad7-a56d-8890befb9dbd.png)
+
+   `
+    "NOTE: In case of Permission denied error, use the following command: sudo chmod -R 777 .
+    If the installation is successful, the Chaincode code package identifier is shown in the output."
+   `
+
+#### Step 3: Querying the installed chaincode on Org1 and Org2
+1. Run the following command to query the installed chaincode on `Org1`:
+   ```sh
+    peer lifecycle chaincode queryinstalled --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```
+  ![image](https://user-images.githubusercontent.com/40519952/204639125-79e76624-0f28-4aac-a17a-7a9190f89bce.png)
+
+2. Run the following command to query the installed chaincode on `Org2`:
+  ```sh
+    peer lifecycle chaincode queryinstalled  --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```
+  ![image](https://user-images.githubusercontent.com/40519952/204639250-e2f90a5e-0e89-45aa-9adf-4e7f43ede247.png)
+
+   `
+    Note: The chaincode Package ID will be the same for both Org1 and Org2 because the same package is installed. Copy the Package ID for the next step
+   `
+ 
+#### Step 4: Downloading the installed chaincode from Org1
+1. Replace the Package ID copied from Step 3.1 in the following command and run it:
+   ```sh
+    peer lifecycle chaincode getinstalledpackage --package-id Carshowroom_1:7c4dcef914f1521e1ec9ac931c887eab045ed64f8d688d1ebe91ad87eef64005 --output-directory . --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204639528-2efead75-3229-45bc-9260-d5a0bced1733.png)
+
+
+
+   
