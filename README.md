@@ -211,5 +211,101 @@ sudo curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.4.2 1.5.2
    ![image](https://user-images.githubusercontent.com/40519952/204639528-2efead75-3229-45bc-9260-d5a0bced1733.png)
 
 
+### Approve the chaincode
+#### Step 1: Approving chaincode for `Org1`
+1. Run the following command to get the Package ID for the chaincode and copy it:
+   ```sh
+    peer lifecycle chaincode queryinstalled --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```
 
+2. Replace the Package ID copied from Step 1.1 in the following command and run it to approve the chaincode definition for the `Org1`:
+   ```sh
+    peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile $ORDERER_CA -C samplechannel --name Carshowroom --version 1.0 --init-required --package-id Carshowroom_1:7c4dcef914f1521e1ec9ac931c887eab045ed64f8d688d1ebe91ad87eef64005 --sequence 1
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204875456-2f970b6f-2899-4b62-ac1a-eadea6055acc.png)
+
+#### Step 2: Approving chaincode for Org2
+1. Run the following command to get the Package ID for the chaincode and copy it:
+   ```sh
+    peer lifecycle chaincode queryinstalled --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+   ```
+2. Replace the Package ID copied from Step 1.1 in the following command and run it to approve the chaincode definition for the `Org2`:
+   ```sh
+    peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile $ORDERER_CA -C samplechannel --name Carshowroom --version 1.0 --init-required --package-id Carshowroom_1:7c4dcef914f1521e1ec9ac931c887eab045ed64f8d688d1ebe91ad87eef64005 --sequence 1
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204875909-d50f8fb0-3fee-4028-a4a4-06204a854ab6.png)
+
+### Commit the Chaincode
+#### Step 1: Checking commit readiness for Org1 and Org2
+1. Run the following command to check commit readiness for `Org1`:
+   ```sh
+    peer lifecycle chaincode checkcommitreadiness -C samplechannel --name Carshowroom --version 1.0 --sequence 1 --output json --init-required
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204876320-4a54a579-cc7f-4158-bc7f-e2090664ae19.png)
+
+2. Run the following command to check commit readiness for `Org2`:
+   ```sh
+    peer lifecycle chaincode checkcommitreadiness -C samplechannel --name Carshowroom --version 1.0 --sequence 1 --output json --init-required
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204876493-433484cf-3f66-4f32-a1d5-e8afd3438e5f.png)
+
+#### Step 2: Committing the chaincode definition to samplechannel
+1. Run the following command to create a file for channel commit:
+   ```sh
+    nano lifecycle_setup_Channel_commit.sh
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204876711-1bebf9ab-33a7-4a9e-891b-a564f3b25e65.png)
+    
+2. Add the following code in the `lifecycle_setup_Channel_commit.sh` file:
+   ```sh
+    #!/bin/sh
+    export PATH=${PWD}/../bin:${PWD}:$PATH
+    export FABRIC_CFG_PATH=$PWD/../config/
+    export CORE_PEER_TLS_ENABLED=true
+    export CORE_PEER_LOCALMSPID="Org1MSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE_ORG1=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+    export CORE_PEER_TLS_ROOTCERT_FILE_ORG2=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:7051
+    export ORDERER_CA=${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204876976-3b8f24fa-4220-4a23-b398-f96448d46a92.png)
+
+3. Run the lifecycle_setup_Channel_commit.sh file using the following command:
+   ```sh
+    source ./lifecycle_setup_Channel_commit.sh
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204877204-017f10ad-d0da-40dc-8337-424f15bc1053.png)
+
+4. Run the following command to commit the chaincode definition to `samplechannel`:
+   ```sh
+    peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C samplechannel --name Carshowroom --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG1 --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG2 --version 1.0 --sequence 1 --init-required
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204877396-32f3b8ae-b097-444f-85f2-53119ccfc728.png)
+
+#### Step 3: Querying the committed chaincode from samplechannel
+1. Run the following command to query the committed chaincode definition from the `samplechannel`:
+   ```sh
+    peer lifecycle chaincode querycommitted -C samplechannel --name Carshowroom
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204877623-34449b43-005b-453c-9e03-789b5c4bff15.png)
+
+### Access the Chaincode Functions from `Org1`
+1. Invoke `Init` function using the following command:
+   ```sh
+    peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C samplechannel -n Carshowroom --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG1 --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG2 --isInit -c '{"Args":[]}'
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204879105-367c27eb-6e3b-4b89-91cd-1ca77cf47da8.png)   
+
+2. Invoke `addNewCar` function using the following command:
+   ```sh
+    peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C samplechannel -n Carshowroom --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG1 --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG2 -c '{"Args":["addNewCar", "2", "Ford","John","1000"]}'
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204879162-e5d62c5a-19b2-4857-874a-bcb986fa7c30.png)
+
+3. Invoke `queryCarById` function using the following command:
+   ```sh
+    peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C samplechannel -n Carshowroom --peerAddresses localhost:7051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG1 --peerAddresses localhost:9051 --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE_ORG2 -c '{"Args":["queryCarById", "2"]}'
+   ```
+   ![image](https://user-images.githubusercontent.com/40519952/204879308-1c824a9b-2577-455f-8b27-8d71b935ea7e.png)
    
